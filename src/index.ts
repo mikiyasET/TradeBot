@@ -4,6 +4,14 @@ const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true});
 let preMSG = "";
 
+bot.on('message', (msg: {chat: any,text: any}) => {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    if(text.indexOf("/start") !== -1){
+        bot.sendMessage(chatId, "Hello, I'm a bot that will help you to manage your margin.")
+    }
+})
+
 bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
     const {text} = msg;
     if (text != preMSG) {

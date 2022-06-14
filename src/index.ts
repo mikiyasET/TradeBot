@@ -1,3 +1,5 @@
+import {Binance} from "./binance";
+
 require('dotenv').config()
 import './types'
 const TelegramBot = require('node-telegram-bot-api')
@@ -18,8 +20,12 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
         if (text.indexOf('test mode') !== -1) {
             console.log("Test Mode")
         }else {
-            const x: CryptoSignal = filter(text);
-            console.log(x);
+            const x: CryptoSignal | null = filter(text);
+            const binance = new Binance();
+            const balance = await binance.getBalance();
+            if (await binance.order(x.side, x.token, 3 , x.entry.zone1)) {
+                bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+            }
         }
         preMSG = text;
     }
@@ -29,9 +35,9 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
 const filter = (text: string) => {
 
     text = text.replace('Entry zone:','').replace('Entry:','').replace("Leverage:", "").replace('🔴','').replace('🟢','');
-
+    let postType: 1 | 2 | 3 | 4 = 1;
     let msg: string[] = text.split('\n');
-    let side: sideType = null;
+    let side: sideType;
     let margin: marginType;
     let token: string | null;
     let entry: entryType = {
@@ -52,33 +58,38 @@ const filter = (text: string) => {
      txt.push(x.trim())
     });
     if (txt[0] == "LONG") {
-     side = "BUY";
+        side = "BUY";
     }else if (txt[0] == "SHORT") {
-     side = "SELL";
-    }
-    token = txt[1].split(" ")[0].trim();
-    margin = txt[2].split(" ")[0].trim() as marginType;
-    leverage = parseInt(txt[2].split(" ")[1].trim().replace("x", ""));
-    if(txt[3].indexOf("-") !== -1){
-     entry.zone1 = parseFloat(txt[3].split("-")[0].trim());
-     entry.zone2 = parseFloat(txt[3].split("-")[1].trim());
+        side = "SELL";
     }else {
-        entry.zone1 = parseFloat(txt[3].trim());
-        entry.zone2 = null;
+        side = "BUY";
+        postType = 4;
     }
-    target.one = parseFloat(txt[4].split(":")[1].trim());
-    target.two = parseFloat(txt[5].split(":")[1].trim());
-    target.three = parseFloat(txt[6].split(":")[1].trim());
-    target.four = parseFloat(txt[7].split(":")[1].trim());
-    stopLoss = parseFloat(txt[8].split(":")[1].trim());
-
-    return {
-        token: token,
-        side: side,
-        margin: margin,
-        entry: entry,
-        leverage: leverage,
-        target: target,
-        stopLoss: stopLoss
-    };
+    if (postType == 1) {
+        token = txt[1].split(" ")[0].trim();
+        margin = txt[2].split(" ")[0].trim() as marginType;
+        leverage = parseInt(txt[2].split(" ")[1].trim().replace("x", ""));
+        if(txt[3].indexOf("-") !== -1){
+        entry.zone1 = parseFloat(txt[3].split("-")[0].trim());
+        entry.zone2 = parseFloat(txt[3].split("-")[1].trim());
+        }else {
+            entry.zone1 = parseFloat(txt[3].trim());
+            entry.zone2 = null;
+        }
+        target.one = parseFloat(txt[4].split(":")[1].trim());
+        target.two = parseFloat(txt[5].split(":")[1].trim());
+        target.three = parseFloat(txt[6].split(":")[1].trim());
+        target.four = parseFloat(txt[7].split(":")[1].trim());
+        stopLoss = parseFloat(txt[8].split(":")[1].trim());
+        return {
+            token: token,
+            side: side,
+            margin: margin,
+            entry: entry,
+            leverage: leverage,
+            target: target,
+            stopLoss: stopLoss
+        };
+    }
+    return null;
 }

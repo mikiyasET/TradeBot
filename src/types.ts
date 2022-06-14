@@ -1,5 +1,5 @@
-type sideType = "BUY" | "SELL" | null;
-type marginType = "CROSS" | "ISOLATED" | null;
+type sideType = "BUY" | "SELL";
+type marginType = "CROSS" | "ISOLATED";
 type entryType = {
     zone1: number;
     zone2: number | null;
@@ -13,7 +13,7 @@ type targetType= {
 type postType = 1 | 2 | 3;
 
 type CryptoSignal = {
-    token: string | null;
+    token: string;
     side: sideType,
     margin: marginType,
     entry: entryType,

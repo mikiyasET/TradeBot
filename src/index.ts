@@ -5,12 +5,31 @@ import './types'
 const TelegramBot = require('node-telegram-bot-api')
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {polling: true});
 let preMSG = "";
+const binance = new Binance();
 
-bot.on('message', (msg: {chat: any,text: any}) => {
+bot.on('message', async (msg: {chat: any,text: any}) => {
+    const balance = await binance.getBalance();
     const chatId = msg.chat.id;
     const text = msg.text;
-    if(text.indexOf("/start") !== -1){
-        bot.sendMessage(chatId, "Hello, I'm a bot that will help you to manage your margin.")
+    try {
+        if(text.indexOf("/balance") !== -1){
+            bot.sendMessage(chatId, "Your balance is " + balance + " USDT")
+        }else {
+            if (text.indexOf('test mode') !== -1) {
+                console.log("Test Mode")
+            }else {
+                const x: CryptoSignal | null = filter(text);
+                if (x != null) {
+                    let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())                    
+                    if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
+                        bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+                    }
+                }
+            }
+            
+        }
+    }catch (e) {
+        
     }
 })
 
@@ -21,10 +40,12 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
             console.log("Test Mode")
         }else {
             const x: CryptoSignal | null = filter(text);
-            const binance = new Binance();
-            const balance = await binance.getBalance();
-            if (await binance.order(x.side, x.token, 3 , x.entry.zone1)) {
-                bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+            if (x != null) {
+                const balance = await binance.getBalance();
+                let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())  
+                if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
+                    bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+                }
             }
         }
         preMSG = text;
@@ -51,45 +72,54 @@ const filter = (text: string) => {
      three: null,
      four: null
     };
-    let stopLoss:number;
+    let stopLoss:number | null;
 
     let txt: string[] = [];
     msg.map((x) => {
      txt.push(x.trim())
     });
-    if (txt[0] == "LONG") {
-        side = "BUY";
-    }else if (txt[0] == "SHORT") {
-        side = "SELL";
-    }else {
-        side = "BUY";
-        postType = 4;
-    }
-    if (postType == 1) {
-        token = txt[1].split(" ")[0].trim();
-        margin = txt[2].split(" ")[0].trim() as marginType;
-        leverage = parseInt(txt[2].split(" ")[1].trim().replace("x", ""));
-        if(txt[3].indexOf("-") !== -1){
-        entry.zone1 = parseFloat(txt[3].split("-")[0].trim());
-        entry.zone2 = parseFloat(txt[3].split("-")[1].trim());
+    if (txt.length == 9) {
+        if (txt[0] == "LONG") {
+            side = "BUY";
+        }else if (txt[0] == "SHORT") {
+            side = "SELL";
         }else {
-            entry.zone1 = parseFloat(txt[3].trim());
-            entry.zone2 = null;
+            side = "BUY";
+            postType = 4;
         }
-        target.one = parseFloat(txt[4].split(":")[1].trim());
-        target.two = parseFloat(txt[5].split(":")[1].trim());
-        target.three = parseFloat(txt[6].split(":")[1].trim());
-        target.four = parseFloat(txt[7].split(":")[1].trim());
-        stopLoss = parseFloat(txt[8].split(":")[1].trim());
-        return {
-            token: token,
-            side: side,
-            margin: margin,
-            entry: entry,
-            leverage: leverage,
-            target: target,
-            stopLoss: stopLoss
-        };
+        if (postType == 1) {
+            console.log(txt[1]);
+            token = txt[1].split(" ")[0].trim();
+            margin = txt[2].split(" ")[0].trim() as marginType;
+            leverage = parseInt(txt[2].split(" ")[1].trim().replace("x", ""));
+            if(txt[3].indexOf("-") !== -1){
+            entry.zone1 = parseFloat(txt[3].split("-")[0].trim());
+            entry.zone2 = parseFloat(txt[3].split("-")[1].trim());
+            }else {
+                entry.zone1 = parseFloat(txt[3].trim());
+                entry.zone2 = null;
+            }
+            target.one = parseFloat(txt[4].split(":")[1].trim());
+            target.two = parseFloat(txt[5].split(":")[1].trim());
+            target.three = parseFloat(txt[6].split(":")[1].trim());
+            target.four = parseFloat(txt[7].split(":")[1].trim());
+            stopLoss = parseFloat(txt[8].split(":")[1].trim());
+            console.log("Passed.");
+            
+            return {
+                token: token,
+                side: side,
+                margin: margin,
+                entry: entry,
+                leverage: leverage,
+                target: target,
+                stopLoss: stopLoss
+            };
+        }else {
+            console.log("Not Trade msg");
+        }
+    }else {
+        console.log("Not 9");
     }
     return null;
 }

@@ -1,5 +1,7 @@
+import { log } from "console";
 import {Binance} from "./binance";
 
+var CC = require("crypto-converter-lt")
 require('dotenv').config()
 import './types'
 const TelegramBot = require('node-telegram-bot-api')
@@ -18,12 +20,26 @@ bot.on('message', async (msg: {chat: any,text: any}) => {
             if (text.indexOf('test mode') !== -1) {
                 console.log("Test Mode")
             }else {
+                let price = require('crypto-price')
                 const x: CryptoSignal | null = filter(text);
                 if (x != null) {
-                    let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())                    
-                    if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
-                        bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
-                    }
+                    binance.getPrice(x.token).then((zx) => {
+                        getPrice('USD', 'ETH').then((obj: any) => { 
+                            console.log(obj)
+                        }).catch((err: any) => {
+                            console.log(err)
+                        })
+                        let quantity = parseFloat(zx.toString()).toFixed(5);
+                        console.log(quantity);
+                    });
+                    // console.log("Got a signal for ", x.token);
+                    // console.log(xy); 
+                    // let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())                    
+                    // console.log(quantity);
+                    
+                    // if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
+                    //     bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+                    // }
                 }
             }
             
@@ -41,11 +57,12 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
         }else {
             const x: CryptoSignal | null = filter(text);
             if (x != null) {
-                const balance = await binance.getBalance();
-                let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())  
-                if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
-                    bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
-                }
+                console.log("going through");
+                // const balance = await binance.getBalance();
+                // let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())  
+                // if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
+                //     bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
+                // }
             }
         }
         preMSG = text;
@@ -119,7 +136,14 @@ const filter = (text: string) => {
             console.log("Not Trade msg");
         }
     }else {
-        console.log("Not 9");
+        console.log("Not a valid format");
     }
     return null;
+}
+
+const getPrice = async (base: string, token: string) => {
+    let cryptoConverter = new CC()
+    cryptoConverter.from("ETH").to("USDT").amount(1).convert().then((response: any) => {
+        console.log(response) //or do something else
+    })
 }

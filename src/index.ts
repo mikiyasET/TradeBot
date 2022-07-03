@@ -1,6 +1,4 @@
-import { log } from "console";
-import { appendFile } from "fs";
-import { loadavg } from "os";
+
 import {Binance} from "./binance";
 var CC = require("crypto-converter-lt")
 require('dotenv').config()
@@ -28,7 +26,7 @@ bot.on('message', async (msg: {chat: any,text: any}) => {
                         let betInUSD = 25;
                         let amount = getAmount(parseFloat(quantity),betInUSD);
                         binance.getinfo(x.token).then(({status,quantityPrecision}) => {
-                            if(status === true) {
+                            if(status) {
                                 let price = 0;
                                 amount = parseFloat(amount.toFixed(quantityPrecision));
                                 if (x.side == "BUY") {
@@ -45,7 +43,7 @@ bot.on('message', async (msg: {chat: any,text: any}) => {
                                         price = x.entry.zone1
                                     }
                                 }
-                                binance.OG(x.side,x.token,x.entry.zone1,amount,x.stopLoss,x.target).then((xe:any) => {
+                                binance.OG(x.side,x.token,x.entry.zone1,amount,x.leverage,x.stopLoss,x.target).then((xe:any) => {
                                     bot.sendMessage(process.env.MYID, `${x.token} ${x.side}\n${x.margin} ${x.leverage}\n${x.entry.zone1} - ${x.entry.zone2}\n${x.target.one}\n${x.target.two}\n${x.target.three}\n${x.target.four}\n${x.stopLoss}\n\n Order placed`);
                                 }).catch((e) => {
                                     bot.sendMessage(process.env.MYID, "Ordering failed.");
@@ -96,7 +94,7 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
                                     price = x.entry.zone1
                                 }
                             }
-                            binance.OG(x.side,x.token,x.entry.zone1,amount,x.stopLoss,x.target).then((xe:any) => {
+                            binance.OG(x.side,x.token,x.entry.zone1,amount,x.leverage,x.stopLoss,x.target).then((xe:any) => {
                                 bot.sendMessage(process.env.MYID, `${x.token} ${x.side}\n${x.margin} ${x.leverage}\n${x.entry.zone1} - ${x.entry.zone2}\n${x.target.one}\n${x.target.two}\n${x.target.three}\n${x.target.four}\n${x.stopLoss}\n\n Order placed`);
                             }).catch((e) => {
                                 bot.sendMessage(process.env.MYID, "Ordering failed.");

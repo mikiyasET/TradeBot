@@ -5,7 +5,11 @@
   "main": "dist/index.ts",
   "scripts": {
     "start": "node dist/index.js",
-    "postinstall": "tsc"
+    "build": "tsc"
+  },
+  "engines": {
+    "node": "17.0",
+    "npm": "8.1"
   },
   "keywords": [],
   "author": "",

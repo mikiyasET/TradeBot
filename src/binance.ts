@@ -111,10 +111,7 @@ export class Binance {
     }
 
     public async OG(side: string,token: string,price: number,quantity: number,stop: number,profit: any) {
-        const sideRev = side === "SELL" ? "BUY" : "SELL";
-        console.log("Price: ",price);
-        console.log("Quantity: ",quantity);
-        
+        const sideRev = side === "SELL" ? "Buy" : "Sell";
         const orders = [
             {
                 symbol: token,
@@ -123,6 +120,14 @@ export class Binance {
                 price: price.toString(),
                 quantity: quantity.toString(),
                 timeInForce: 'GTC',
+            },{
+                symbol: token,
+                type: 'TAKE_PROFIT_MARKET',
+                quantity: quantity.toString(),
+                side: sideRev,
+                stopPrice: profit.four.toString() ?? profit.three.toString() ?? profit.two.toString() ?? profit.one.toString() ?? "0",
+                timeInForce: 'GTC',
+                closePosition: 'True'
             },
             {
                 symbol: token,
@@ -130,15 +135,6 @@ export class Binance {
                 quantity: quantity.toString(),
                 side: sideRev,
                 stopPrice: stop.toString(),
-                timeInForce: 'GTC',
-                closePosition: 'True'
-            },
-            {
-                symbol: token,
-                type: 'TAKE_PROFIT_MARKET',
-                quantity: quantity.toString(),
-                side: sideRev,
-                stopPrice: profit.four.toString() ?? profit.three.toString() ?? profit.two.toString() ?? profit.one.toString() ?? "0",
                 timeInForce: 'GTC',
                 closePosition: 'True'
             }

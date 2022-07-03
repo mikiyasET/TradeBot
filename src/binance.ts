@@ -1,3 +1,5 @@
+import { log } from "console";
+
 require('dotenv').config()
 const BinanceRest = require('node-binance-api');
 export class Binance {
@@ -17,9 +19,8 @@ export class Binance {
     }
 
     public async getBalance() {
-        return await this.binance.futuresBalance().then((res:any) => {
+        return this.binance.futuresBalance().then((res: any) => {
             let balance = 0;
-            console.log(res);
             res.map((x: any) => {
                 if (x.asset == "USDT") {
                     balance = x.balance;
@@ -29,15 +30,17 @@ export class Binance {
         });
     }
 
-    public async order(side: string, token: string, quantity: number, price: number) {
+    public async order(side: string, token: string, quantity: number, price: number, stopPrice: number = 0,takePrice: number = 0) {
         if (side === 'BUY') {
-            return await this.binance.futuresBuy(
+            return this.binance.futuresBuy(
                  token,
                  quantity,
                  price,
                  {
-                     timeInForce: 'GTC'
-                 }
+                    timeInForce: 'GTC',
+                    stopPrice: stopPrice,
+                    type: "STOP_LOSS_LIMIT"
+                }
             ).then((res:any) => {
                 console.log("Success: ",res);
                 return true;
@@ -45,14 +48,21 @@ export class Binance {
                 console.log("Error: ",err);
                 return false;
             })
+        }else if (side == 'SELL') {
+            this.binance.futuresSell(token,quantity,price,
+                {
+                    timeInForce: 'GTC',
+                    stopPrice: stopPrice,
+                    type: "STOP_LOSS_LIMIT"
+                })
         }else {
-            console.log(token);
-            return await this.binance.futuresSell(
+            return this.binance.futuresSell(
                 token,
                 quantity,
                 price,
                 {
-                    timeInForce: 'GTC'
+                    timeInForce: 'GTC',
+                    type: "TAKE_PROFIT_MARKET"
                 }
             ).then((res:any) => {
                 console.log("Success: ",res);
@@ -75,5 +85,64 @@ export class Binance {
     public async getPrice(symbol: string) {
         let ticker = await this.binance.prices();
         return ticker[symbol];
+    }
+
+    public async getinfo(token: string): Promise<{status: boolean, quantityPrecision: number}> {
+        return await this.binance.futuresExchangeInfo()
+        .then(async (info:any) => {
+             let m;
+             info['symbols'].forEach((element:any) => {
+                if(element.symbol === token) {
+                    m = {
+                        status: true,
+                        quantityPrecision: element.quantityPrecision
+                    };
+                }   
+            });
+            // console.log(m);
+            
+            return m;
+        }).catch((e:any) => {
+            return {
+                status: false,
+                quantityPrecision: 0
+            }
+        });
+    }
+
+    public async OG(side: string,token: string,price: number,quantity: number,stop: number,profit: any) {
+        const sideRev = side === "SELL" ? "BUY" : "SELL";
+        console.log("Price: ",price);
+        console.log("Quantity: ",quantity);
+        
+        const orders = [
+            {
+                symbol: token,
+                type: "LIMIT",
+                side: side,
+                price: price.toString(),
+                quantity: quantity.toString(),
+                timeInForce: 'GTC',
+            },
+            {
+                symbol: token,
+                type: 'STOP_MARKET',
+                quantity: quantity.toString(),
+                side: sideRev,
+                stopPrice: stop.toString(),
+                timeInForce: 'GTC',
+                closePosition: 'True'
+            },
+            {
+                symbol: token,
+                type: 'TAKE_PROFIT_MARKET',
+                quantity: quantity.toString(),
+                side: sideRev,
+                stopPrice: profit.four.toString() ?? profit.three.toString() ?? profit.two.toString() ?? profit.one.toString() ?? "0",
+                timeInForce: 'GTC',
+                closePosition: 'True'
+            }
+        ]
+        return await this.binance.futuresMultipleOrders(orders);
     }
 }

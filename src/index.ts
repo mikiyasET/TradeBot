@@ -1,4 +1,5 @@
 import { log } from "console";
+import { loadavg } from "os";
 import {Binance} from "./binance";
 
 var CC = require("crypto-converter-lt")
@@ -20,26 +21,42 @@ bot.on('message', async (msg: {chat: any,text: any}) => {
             if (text.indexOf('test mode') !== -1) {
                 console.log("Test Mode")
             }else {
-                let price = require('crypto-price')
                 const x: CryptoSignal | null = filter(text);
                 if (x != null) {
                     binance.getPrice(x.token).then((zx) => {
-                        getPrice('USD', 'ETH').then((obj: any) => { 
-                            console.log(obj)
-                        }).catch((err: any) => {
-                            console.log(err)
-                        })
                         let quantity = parseFloat(zx.toString()).toFixed(5);
-                        console.log(quantity);
+                        let betInUSD = 25;
+                        let amount = getAmount(parseFloat(quantity),betInUSD);
+                        binance.getinfo(x.token).then(({status,quantityPrecision}) => {
+                            if(status === true) {
+                                let price = 0;
+                                amount = parseFloat(amount.toFixed(quantityPrecision));
+                                if (x.side == "BUY") {
+                                     //       47      >    45
+                                    if (x.entry.zone1 > parseFloat(quantity)) {
+                                        price = parseFloat(quantity) 
+                                    }else {
+                                        price = x.entry.zone1
+                                    }
+                                }else {
+                                    if (x.entry.zone1 < parseFloat(quantity)) {
+                                        price = parseFloat(quantity)
+                                    }else {
+                                        price = x.entry.zone1
+                                    }
+                                }
+                                binance.OG(x.side,x.token,x.entry.zone1,amount,x.stopLoss,x.target).then((xe:any) => {
+                                    bot.sendMessage(process.env.MYID, `${x.token} ${x.side}\n${x.margin} ${x.leverage}\n${x.entry.zone1} - ${x.entry.zone2}\n${x.target.one}\n${x.target.two}\n${x.target.three}\n${x.target.four}\n${x.stopLoss}\n\n Order placed`);
+                                }).catch((e) => {
+                                    bot.sendMessage(process.env.MYID, "Ordering failed.");
+                                })
+                            }else {
+                                console.log("Status: ",status);
+                            }
+                        }).catch((err) => {
+                            console.log(err);
+                        })
                     });
-                    // console.log("Got a signal for ", x.token);
-                    // console.log(xy); 
-                    // let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())                    
-                    // console.log(quantity);
-                    
-                    // if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
-                    //     bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
-                    // }
                 }
             }
             
@@ -57,12 +74,40 @@ bot.on('channel_post', async (msg: {message_id: any, text: any,chat: any;}) => {
         }else {
             const x: CryptoSignal | null = filter(text);
             if (x != null) {
-                console.log("going through");
-                // const balance = await binance.getBalance();
-                // let quantity = 10 * parseFloat(Math.round(await binance.getPrice(x.token)).toString())  
-                // if (await binance.order(x.side, x.token, quantity , x.entry.zone1)) {
-                //     bot.sendMessage(process.env.MYID, `${x.token} ${x.side} ${x.margin} ${x.leverage} ${x.entry.zone1} ${x.entry.zone2} ${x.target.one} ${x.target.two} ${x.target.three} ${x.target.four} ${x.stopLoss}`);
-                // }
+                binance.getPrice(x.token).then((zx) => {
+                    let quantity = parseFloat(zx.toString()).toFixed(5);
+                    let betInUSD = 25;
+                    let amount = getAmount(parseFloat(quantity),betInUSD);
+                    binance.getinfo(x.token).then(({status,quantityPrecision}) => {
+                        if(status === true) {
+                            let price = 0;
+                            amount = parseFloat(amount.toFixed(quantityPrecision));
+                            if (x.side == "BUY") {
+                                 //       47      >    45
+                                if (x.entry.zone1 > parseFloat(quantity)) {
+                                    price = parseFloat(quantity) 
+                                }else {
+                                    price = x.entry.zone1
+                                }
+                            }else {
+                                if (x.entry.zone1 < parseFloat(quantity)) {
+                                    price = parseFloat(quantity)
+                                }else {
+                                    price = x.entry.zone1
+                                }
+                            }
+                            binance.OG(x.side,x.token,x.entry.zone1,amount,x.stopLoss,x.target).then((xe:any) => {
+                                bot.sendMessage(process.env.MYID, `${x.token} ${x.side}\n${x.margin} ${x.leverage}\n${x.entry.zone1} - ${x.entry.zone2}\n${x.target.one}\n${x.target.two}\n${x.target.three}\n${x.target.four}\n${x.stopLoss}\n\n Order placed`);
+                            }).catch((e) => {
+                                bot.sendMessage(process.env.MYID, "Ordering failed.");
+                            })
+                        }else {
+                            console.log("Status: ",status);
+                        }
+                    }).catch((err) => {
+                        console.log(err);
+                    })
+                });
             }
         }
         preMSG = text;
@@ -105,7 +150,7 @@ const filter = (text: string) => {
             postType = 4;
         }
         if (postType == 1) {
-            console.log(txt[1]);
+            // console.log(txt[1]);
             token = txt[1].split(" ")[0].trim();
             margin = txt[2].split(" ")[0].trim() as marginType;
             leverage = parseInt(txt[2].split(" ")[1].trim().replace("x", ""));
@@ -141,9 +186,14 @@ const filter = (text: string) => {
     return null;
 }
 
-const getPrice = async (base: string, token: string) => {
-    let cryptoConverter = new CC()
-    cryptoConverter.from("ETH").to("USDT").amount(1).convert().then((response: any) => {
-        console.log(response) //or do something else
-    })
+const getAmount = (tokenPrice: number,usdt: number) => {
+    console.log(usdt)
+    const price = usdt / parseFloat(tokenPrice.toFixed(2));
+    console.log("Price: ",price);
+    return truncateToDecimals(price,5)
+        
+}
+function truncateToDecimals(num: number, dec:number):number {
+    const calcDec = Math.pow(10, dec);
+    return Math.trunc(num * calcDec) / calcDec;
 }

@@ -19,6 +19,7 @@
     "crypto-converter-lt": "^1.0.0-alpha.4",
     "crypto-price": "^0.0.6",
     "dotenv": "^16.0.1",
+    "express": "^4.18.1",
     "node-binance-api": "^0.13.1",
     "node-telegram-bot-api": "^0.57.0",
     "nodemon": "^2.0.16",

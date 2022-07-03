@@ -1,7 +1,9 @@
 import { log } from "console";
+import { appendFile } from "fs";
 import { loadavg } from "os";
 import {Binance} from "./binance";
-
+const express = require('express');
+const app = express();
 var CC = require("crypto-converter-lt")
 require('dotenv').config()
 import './types'
@@ -197,3 +199,7 @@ function truncateToDecimals(num: number, dec:number):number {
     const calcDec = Math.pow(10, dec);
     return Math.trunc(num * calcDec) / calcDec;
 }
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log("Server started");
+})

@@ -115,14 +115,6 @@ export class Binance {
         const orders = [
             {
                 symbol: token,
-                type: 'TAKE_PROFIT_MARKET',
-                quantity: quantity.toString(),
-                side: sideRev,
-                stopPrice: profit.four.toString() ?? profit.three.toString() ?? profit.two.toString() ?? profit.one.toString() ?? "0",
-                timeInForce: 'GTC',
-                closePosition: 'True'
-            },{
-                symbol: token,
                 type: "LIMIT",
                 side: side,
                 price: price.toString(),
@@ -135,7 +127,14 @@ export class Binance {
                 quantity: quantity.toString(),
                 side: sideRev,
                 stopPrice: stop.toString(),
-                timeInForce: 'GTC',
+                closePosition: 'True'
+            },
+            {
+                symbol: token,
+                type: 'TAKE_PROFIT_MARKET',
+                quantity: quantity.toString(),
+                side: sideRev,
+                stopPrice: profit.four.toString() ?? profit.three.toString() ?? profit.two.toString() ?? profit.one.toString() ?? "0",
                 closePosition: 'True'
             }
         ]

@@ -110,7 +110,7 @@ export class Binance {
         });
     }
 
-    public async OG(side: string,token: string,price: number,quantity: number,leverage:number, stop: number,profit: any) {
+    public async OG(side: string,token: string,price: number,quantity: number,leverage:number , stop: number,profit: any) {
         const sideRev = side === "SELL" ? "BUY" : "SELL";
         console.log("Price: ",price);
         console.log("Quantity: ",quantity);
@@ -120,6 +120,7 @@ export class Binance {
                 symbol: token,
                 type: "LIMIT",
                 side: side,
+                leverage: leverage.toString(),
                 price: price.toString(),
                 quantity: quantity.toString(),
                 timeInForce: 'GTC',

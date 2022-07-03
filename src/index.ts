@@ -199,7 +199,9 @@ function truncateToDecimals(num: number, dec:number):number {
     const calcDec = Math.pow(10, dec);
     return Math.trunc(num * calcDec) / calcDec;
 }
-
+app.get('/', (req:any, res:any) => {
+    res.send('Hello World!');
+})
 app.listen(process.env.PORT || 3000, () => {
     console.log("Server started");
 })

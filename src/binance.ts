@@ -120,7 +120,6 @@ export class Binance {
                 symbol: token,
                 type: "LIMIT",
                 side: side,
-                leverage: leverage.toString(),
                 price: price.toString(),
                 quantity: quantity.toString(),
                 timeInForce: 'GTC',
@@ -144,6 +143,10 @@ export class Binance {
                 closePosition: 'True'
             }
         ]
-        return await this.binance.futuresMultipleOrders(orders);
+        await this.binance.futuresLeverage( token, leverage).then(async (res:any) => { 
+            return await this.binance.futuresMultipleOrders(orders);
+        }).catch((err:any) => {
+            console.log(err);
+        })
     }
 }

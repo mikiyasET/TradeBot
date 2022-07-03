@@ -27,7 +27,7 @@ bot.on('message', async (msg: {chat: any,text: any}) => {
                         let betInUSD = 25;
                         let amount = getAmount(parseFloat(quantity),betInUSD);
                         binance.getinfo(x.token).then(({status,quantityPrecision}) => {
-                            if(status === true) {
+                            if(status) {
                                 let price = 0;
                                 amount = parseFloat(amount.toFixed(quantityPrecision));
                                 if (x.side == "BUY") {
